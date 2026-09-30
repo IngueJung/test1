@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+    <html lang="ko" class="dark">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>초·중·고 교육용 뽀모도로 타이머</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            pitch: '#000000',
+                            deep: '#0a0a0a',
+                            card: '#121212',
+                        }
+                    }
+                }
+            }
+        </script>
+        <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+        <style>
+            body {
+                font-family: 'Noto Sans KR', sans-serif;
+            }
+            .font-jua {
+                font-family: 'Jua', sans-serif;
+            }
+            @keyframes pulse-gentle {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.03); }
+            }
+            .animate-pulse-gentle {
+                animation: pulse-gentle 2s infinite ease-in-out;
+            }
+        </style>
+    </head>
+    <body id="app-body" class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white transition-colors duration-300">
+
+        <header id="app-header" class="bg-slate-800 border-b border-slate-700 py-4 px-6 shadow-md transition-colors duration-300">
+            <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-indigo-600 text-white p-2.5 rounded-2xl shadow-lg flex items-center justify-center text-2xl font-jua">
+                        ⏱️
+                    </div>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-jua tracking-wide text-indigo-300">집중 쏙쏙! 스마트 뽀모도로</h1>
+                        <p class="text-xs text-slate-400">학생들을 위한 시각적 시간 관리 & 학습 도우미</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <!-- Theme Mode Switcher Button -->
+                    <button onclick="toggleThemeMode()" id="theme-toggle-btn" class="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 px-3.5 py-2 rounded-xl text-xs font-bold text-amber-300 border border-slate-600 transition shadow">
+                        <span id="theme-icon">🌙</span> <span id="theme-text">딥블랙 모드</span>
+                    </button>
+
+                    <!-- Quick Stats / Session Tracker -->
+                    <div class="flex items-center gap-2 bg-slate-700/60 px-4 py-2 rounded-xl border border-slate-600">
+                        <span class="text-sm font-medium text-slate-300">완료:</span>
+                        <span id="session-count" class="text-lg font-bold text-amber-400">0회</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-5xl mx-auto px-4 py-8 w-full flex-grow flex flex-col items-center justify-center">
+
+            <!-- Mode Selector Tabs -->
+            <div id="tab-container" class="bg-slate-800 p-1.5 rounded-2xl mb-8 shadow-inner border border-slate-700 w-full max-w-md flex justify-center transition-colors duration-300">
+                <button id="tab-work" onclick="switchMode('work')" class="flex-1 py-2.5 px-4 rounded-xl font-jua text-sm sm:text-base transition-all bg-indigo-600 text-white shadow">집중 학습 📚</button>
+                <button id="tab-short" onclick="switchMode('shortBreak')" class="flex-1 py-2.5 px-4 rounded-xl font-jua text-sm sm:text-base transition-all text-slate-400 hover:text-white">짧은 휴식 ☕</button>
+                <button id="tab-long" onclick="switchMode('longBreak')" class="flex-1 py-2.5 px-4 rounded-xl font-jua text-sm sm:text-base transition-all text-slate-400 hover:text-white">긴 휴식 🧘</button>
+            </div>
+
+            <!-- Timer & Visualizer Card -->
+            <div id="timer-card" class="bg-slate-800/90 border border-slate-700 rounded-3xl p-6 sm:p-10 shadow-2xl w-full max-w-2xl flex flex-col items-center relative overflow-hidden transition-colors duration-300">
+                
+                <!-- Background Glow Effect -->
+                <div id="card-glow" class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <!-- Digital Clock Setting & Display Bar -->
+                <div id="settings-bar" class="w-full bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-inner transition-colors duration-300">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xl">⚙️</span>
+                        <span class="text-sm font-bold text-slate-300">타이머 시간 설정 (분)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5">
+                            <span class="text-xs text-slate-400 mr-2 font-jua">집중:</span>
+                            <input type="number" id="input-work" min="1" max="120" value="25" class="w-12 bg-transparent text-center font-bold text-indigo-400 focus:outline-none">
+                        </div>
+                        <div class="flex items-center bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5">
+                            <span class="text-xs text-slate-400 mr-2 font-jua">휴식:</span>
+                            <input type="number" id="input-break" min="1" max="60" value="5" class="w-12 bg-transparent text-center font-bold text-emerald-400 focus:outline-none">
+                        </div>
+                        <button onclick="applyCustomTime()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition shadow">적용</button>
+                    </div>
+                </div>
+
+                <!-- Visual Progress Area -->
+                <div class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center my-4">
+                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="44" id="ring-track" class="text-slate-700 transition-colors duration-300" stroke-width="8" stroke="currentColor" fill="transparent" />
+                        <circle id="progress-ring" cx="50" cy="50" r="44" class="text-indigo-500 transition-all duration-1000 ease-linear" stroke-width="8" stroke-dasharray="276.46" stroke-dashoffset="0" stroke-linecap="round" fill="transparent" />
+                    </svg>
+
+                    <div class="absolute flex flex-col items-center justify-center text-center">
+                        <span id="timer-display" class="font-jua text-5xl sm:text-6xl tracking-wider text-white drop-shadow-md">25:00</span>
+                        <span id="timer-status-text" class="text-xs sm:text-sm font-semibold text-indigo-300 mt-1 uppercase tracking-widest">집중할 시간이에요!</span>
+                    </div>
+                </div>
+
+                <!-- Fun Visual Student Helper (Battery/Fuel bar) -->
+                <div id="energy-box" class="w-full bg-slate-900/60 p-4 rounded-2xl border border-slate-700/60 my-4 transition-colors duration-300">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-slate-400 flex items-center gap-1">
+                            <span>🔋</span> 집중 에너지 게이지
+                        </span>
+                        <span id="energy-percent" class="text-xs font-bold text-indigo-400">100%</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                        <div id="energy-bar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-1000" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- Control Action Buttons -->
+                <div class="flex flex-wrap justify-center items-center gap-4 mt-4 w-full">
+                    <button id="btn-start" onclick="toggleTimer()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-jua text-lg py-3.5 px-6 rounded-2xl shadow-lg shadow-indigo-600/30 transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
+                        <span id="btn-icon">▶️</span> <span id="btn-text">시작하기</span>
+                    </button>
+                    <button onclick="resetTimer()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-jua text-lg py-3.5 px-6 rounded-2xl shadow transition flex items-center justify-center gap-2">
+                        🔄 초기화
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Motivational Student Quotes / Tips Carousel -->
+            <div id="quote-box" class="mt-8 bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 max-w-2xl w-full text-center shadow-inner transition-colors duration-300">
+                <p id="quote-text" class="text-sm text-slate-300 font-medium">💡 "작은 노력들이 모여 놀라운 결과를 만듭니다. 오늘도 화이팅!"</p>
+            </div>
+
+        </main>
+
+        <footer id="app-footer" class="bg-slate-800 border-t border-slate-700 py-4 text-center text-xs text-slate-500 transition-colors duration-300">
+            <p>교육용 스마트 뽀모도로 타이머 | 학생들이 즐겁게 집중할 수 있는 환경을 만듭니다.</p>
+        </footer>
+
+        <script>
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            function playChime(type) {
+                if (!audioCtx) return;
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+                if (type === 'start') {
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'complete') {
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        o.frequency.setValueAtTime(freq, now + i * 0.08);
+                        g.gain.setValueAtTime(0.15, now + i * 0.08);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.4);
+                        o.start(now + i * 0.08);
+                        o.stop(now + i * 0.08 + 0.4);
+                    });
+                }
+            }
+
+            let isPitchBlack = false;
+            function toggleThemeMode() {
+                isPitchBlack = !isPitchBlack;
+                const body = document.getElementById('app-body');
+                const header = document.getElementById('app-header');
+                const footer = document.getElementById('app-footer');
+                const tabContainer = document.getElementById('tab-container');
+                const timerCard = document.getElementById('timer-card');
+                const settingsBar = document.getElementById('settings-bar');
+                const energyBox = document.getElementById('energy-box');
+                const quoteBox = document.getElementById('quote-box');
+                const ringTrack = document.getElementById('ring-track');
+                const themeBtn = document.getElementById('theme-toggle-btn');
+                const themeIcon = document.getElementById('theme-icon');
+                const themeText = document.getElementById('theme-text');
+
+                if (isPitchBlack) {
+                    body.className = "bg-pitch text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white transition-colors duration-300";
+                    header.className = "bg-deep border-b border-zinc-900 py-4 px-6 shadow-md transition-colors duration-300";
+                    footer.className = "bg-deep border-t border-zinc-900 py-4 text-center text-xs text-zinc-600 transition-colors duration-300";
+                    tabContainer.className = "bg-zinc-900 p-1.5 rounded-2xl mb-8 shadow-inner border border-zinc-800 w-full max-w-md flex justify-center transition-colors duration-300";
+                    timerCard.className = "bg-deep border border-zinc-800 rounded-3xl p-6 sm:p-10 shadow-2xl w-full max-w-2xl flex flex-col items-center relative overflow-hidden transition-colors duration-300";
+                    settingsBar.className = "w-full bg-pitch border border-zinc-800 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-inner transition-colors duration-300";
+                    energyBox.className = "w-full bg-pitch p-4 rounded-2xl border border-zinc-800 my-4 transition-colors duration-300";
+                    quoteBox.className = "mt-8 bg-deep border border-zinc-800 rounded-2xl p-4 max-w-2xl w-full text-center shadow-inner transition-colors duration-300";
+                    ringTrack.className = "text-zinc-800 transition-colors duration-300";
+                    themeBtn.className = "flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 px-3.5 py-2 rounded-xl text-xs font-bold text-amber-400 border border-zinc-700 transition shadow";
+                    themeIcon.innerText = "☀️";
+                    themeText.innerText = "기본 다크 모드";
+                } else {
+                    body.className = "bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white transition-colors duration-300";
+                    header.className = "bg-slate-800 border-b border-slate-700 py-4 px-6 shadow-md transition-colors duration-300";
+                    footer.className = "bg-slate-800 border-t border-slate-700 py-4 text-center text-xs text-slate-500 transition-colors duration-300";
+                    tabContainer.className = "bg-slate-800 p-1.5 rounded-2xl mb-8 shadow-inner border border-slate-700 w-full max-w-md flex justify-center transition-colors duration-300";
+                    timerCard.className = "bg-slate-800/90 border border-slate-700 rounded-3xl p-6 sm:p-10 shadow-2xl w-full max-w-2xl flex flex-col items-center relative overflow-hidden transition-colors duration-300";
+                    settingsBar.className = "w-full bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-inner transition-colors duration-300";
+                    energyBox.className = "w-full bg-slate-900/60 p-4 rounded-2xl border border-slate-700/60 my-4 transition-colors duration-300";
+                    quoteBox.className = "mt-8 bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 max-w-2xl w-full text-center shadow-inner transition-colors duration-300";
+                    ringTrack.className = "text-slate-700 transition-colors duration-300";
+                    themeBtn.className = "flex items-center gap-2 bg-slate-700 hover:bg-slate-600 px-3.5 py-2 rounded-xl text-xs font-bold text-amber-300 border border-slate-600 transition shadow";
+                    themeIcon.innerText = "🌙";
+                    themeText.innerText = "딥블랙 모드";
+                }
+            }
+
+            let currentMode = 'work';
+            let workDuration = 25 * 60;
+            let shortBreakDuration = 5 * 60;
+            let longBreakDuration = 15 * 60;
+            
+            let timeLeft = workDuration;
+            let totalTime = workDuration;
+            let timerInterval = null;
+            let isRunning = false;
+            let completedSessions = 0;
+
+            const quotes = [
+                "💡 \"작은 노력들이 모여 놀라운 결과를 만듭니다. 오늘도 화이팅!\"",
+                "🌟 \"지금 흘린 땀방울이 미래의 멋진 꿈을 이뤄줍니다.\"",
+                "🎯 \"산만함을 멀리하고, 지금 이 순간에만 집중해 볼까요?\"",
+                "🚀 \"조금씩 꾸준히 하는 사람이 결국 승리합니다!\"",
+                "☕ \"열심히 집중했다면, 휴식 시간엔 편안하게 재충전하세요.\""
+            ];
+
+            function rotateQuotes() {
+                const quoteEl = document.getElementById('quote-text');
+                let idx = Math.floor(Math.random() * quotes.length);
+                quoteEl.innerText = quotes[idx];
+            }
+
+            function updateDisplay() {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                const timeString = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                
+                document.getElementById('timer-display').innerText = timeString;
+                document.title = `(${timeString}) 뽀모도로 타이머`;
+
+                const circumference = 2 * Math.PI * 44;
+                const progress = timeLeft / totalTime;
+                const offset = circumference - (progress * circumference);
+                const ring = document.getElementById('progress-ring');
+                ring.style.strokeDasharray = circumference;
+                ring.style.strokeDashoffset = offset;
+
+                const percent = Math.round(progress * 100);
+                document.getElementById('energy-bar').style.width = `${percent}%`;
+                document.getElementById('energy-percent').innerText = `${percent}%`;
+            }
+
+            function switchMode(mode) {
+                if (isRunning) {
+                    if (!confirm("진행 중인 타이머가 있어요. 모드를 변경하시겠어요?")) return;
+                    pauseTimer();
+                }
+
+                currentMode = mode;
+                
+                document.getElementById('tab-work').className = "flex-1 py-2.5 px-4 rounded-xl font-jua text-sm sm:text-base transition-all " + (mode === 'work' ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white");
+                document.getElementById('tab-short').className = "flex-1 py-2.5 px-4 rounded-xl font-jua text-sm sm:text-base transition-all " + (mode === 'shortBreak' ? "bg-emerald-600 text-white shadow" : "text-slate-400 hover:text-white");
+                document.getElementById('tab-long').className = "flex-1 py-2.5 px-4 rounded-xl font-jua text-sm sm:text-base transition-all " + (mode === 'longBreak' ? "bg-teal-600 text-white shadow" : "text-slate-400 hover:text-white");
+
+                const statusText = document.getElementById('timer-status-text');
+                const ring = document.getElementById('progress-ring');
+
+                if (mode === 'work') {
+                    totalTime = workDuration;
+                    statusText.innerText = "집중할 시간이에요!";
+                    statusText.className = "text-xs sm:text-sm font-semibold text-indigo-300 mt-1 uppercase tracking-widest";
+                    ring.className = "text-indigo-500 transition-all duration-1000 ease-linear";
+                } else if (mode === 'shortBreak') {
+                    totalTime = shortBreakDuration;
+                    statusText.innerText = "가벼운 휴식 시간 ☕";
+                    statusText.className = "text-xs sm:text-sm font-semibold text-emerald-300 mt-1 uppercase tracking-widest";
+                    ring.className = "text-emerald-500 transition-all duration-1000 ease-linear";
+                } else if (mode === 'longBreak') {
+                    totalTime = longBreakDuration;
+                    statusText.innerText = "여유로운 재충전 시간 🧘";
+                    statusText.className = "text-xs sm:text-sm font-semibold text-teal-300 mt-1 uppercase tracking-widest";
+                    ring.className = "text-teal-500 transition-all duration-1000 ease-linear";
+                }
+
+                timeLeft = totalTime;
+                updateDisplay();
+            }
+
+            function applyCustomTime() {
+                const wVal = parseInt(document.getElementById('input-work').value);
+                const bVal = parseInt(document.getElementById('input-break').value);
+
+                if (isNaN(wVal) || wVal < 1 || wVal > 120 || isNaN(bVal) || bVal < 1 || bVal > 60) {
+                    alert("올바른 시간 범위(집중 1~120분, 휴식 1~60분)를 입력해주세요.");
+                    return;
+                }
+
+                workDuration = wVal * 60;
+                shortBreakDuration = bVal * 60;
+                longBreakDuration = (bVal * 3) * 60;
+
+                if (isRunning) pauseTimer();
+                timeLeft = workDuration;
+                totalTime = workDuration;
+                switchMode('work');
+                alert("설정 시간이 적용되었습니다!");
+            }
+
+            function toggleTimer() {
+                if (isRunning) {
+                    pauseTimer();
+                } else {
+                    startTimer();
+                }
+            }
+
+            function startTimer() {
+                if (!isRunning) {
+                    isRunning = true;
+                    playChime('start');
+                    document.getElementById('btn-icon').innerText = "⏸️";
+                    document.getElementById('btn-text').innerText = "일시정지";
+                    
+                    timerInterval = setInterval(() => {
+                        if (timeLeft > 0) {
+                            timeLeft--;
+                            updateDisplay();
+                        } else {
+                            clearInterval(timerInterval);
+                            isRunning = false;
+                            playChime('complete');
+                            
+                            if (currentMode === 'work') {
+                                completedSessions++;
+                                document.getElementById('session-count').innerText = completedSessions + "회";
+                                alert("🎉 수고했어요! 집중 학습 세션을 완료했습니다. 휴식 시간을 가져볼까요?");
+                                switchMode('shortBreak');
+                            } else {
+                                alert("⏰ 휴식 시간이 끝났습니다! 다시 힘내서 집중해볼까요?");
+                                switchMode('work');
+                            }
+                        }
+                    }, 1000);
+                }
+            }
+
+            function pauseTimer() {
+                isRunning = false;
+                clearInterval(timerInterval);
+                document.getElementById('btn-icon').innerText = "▶️";
+                document.getElementById('btn-text').innerText = "계속하기";
+            }
+
+            function resetTimer() {
+                pauseTimer();
+                timeLeft = totalTime;
+                updateDisplay();
+            }
+
+            window.onload = function() {
+                updateDisplay();
+                setInterval(rotateQuotes, 10000);
+            }
+        </script>
+    </body>
+    </html>
